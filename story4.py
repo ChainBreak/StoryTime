@@ -1,9 +1,10 @@
 
 class Node():
-    def __init__(self,name,is_a,has_a):
+    def __init__(self,name,base_class_set,has_class_set):
         self.name = name
-        self.is_a = is_a
-        self.has_a = has_a
+        self.base_class_set = base_class_set
+        self.sub_class_set = set()
+        self.has_class_set = has_class_set
 
         self.is_a_visited = False
 
@@ -16,13 +17,21 @@ class BrokenFarmStory():
         self.node_dict = {}
 
         self.add_node("location")
-        self.add_node("open_yard",is_a=["location"],has_a=["vehicle"])
+        self.add_node("open_yard",["location"],["vehicle"])
         self.add_node("front yard", ["open_yard"])
-        # self.add_node("the area in front of the shed", ["open_yard"])
+        self.add_node("the area in front of the shed", ["open_yard"])
 
         self.add_node("device",)
-        self.add_node("vehicle",["device"])
+        self.add_node("vehicle",["device"],["component_vehicle"])
         self.add_node("tractor",["vehicle"])
+        self.add_node("ute",["vehicle"])
+        self.add_node("motor bike",["vehicle"])
+
+        self.add_node("component")
+        self.add_node("component_vehicle",["component"])
+
+        self.add_node("tire", ["component_vehicle"])
+        self.add_node("battery", ["component_vehicle"])
 
 
         self.build_graph()
@@ -41,41 +50,47 @@ class BrokenFarmStory():
 
     def build_graph(self):
         for node in self.node_dict.values():
-            self.is_recursion(node)
+            self.base_class_recursion(node)
 
 
         for node in self.node_dict.values():
-            for name in list(node.is_a):
-                next_node = self.node_dict[name]
-                has_a = self.has_recursion(next_node)
-                node.has_a.update(has_a)
-            node.has_a -= node.is_a
-            # print(node.name,"has a", node.has_a)
+            for name in list(node.base_class_set):
+                base_node = self.node_dict[name]
+                has_class_set = self.has_recursion(base_node)
+                node.has_class_set.update(has_class_set)
+
 
         for node in self.node_dict.values():
-            print(node.name,"is a", node.is_a)
-            print(node.name,"has a", node.has_a)
+            print(node.name,"is a", node.base_class_set)
+            print(node.name,"parent of", node.sub_class_set)
+            print(node.name,"has a ", node.has_class_set)
 
-    def is_recursion(self,node):
+    def base_class_recursion(self,node):
         # print("recursion" ,node.name)
-        for name in list(node.is_a):
-            next_node = self.node_dict[name]
-            next_node.has_a.update({node.name})
-            new_is_a = self.is_recursion(next_node)
-            node.is_a.update(new_is_a)
+        # For all base classes of this node
+        for name in list(node.base_class_set):
+            base_node = self.node_dict[name]
+            
+            #Set this class as a sub class of the base class
+            base_node.sub_class_set.update({node.name})
+            base_node.sub_class_set.update(node.sub_class_set)
+            all_base_class_set = self.base_class_recursion(base_node)
+            node.base_class_set.update(all_base_class_set)
 
-        return node.is_a
+        return node.base_class_set
 
     def has_recursion(self,node):
         # print("has recursion" ,node.name)
-        has_a = set()
-        for name in list(node.has_a):
-            next_node = self.node_dict[name]
-            has_a.update(next_node.has_a)
-            new_has_a = self.has_recursion(next_node)
-            has_a.update(new_has_a)
+   
+        for name in list(node.has_class_set):
+            has_node = self.node_dict[name]
 
-        return has_a
+            node.has_class_set.update({has_node.name})
+            node.has_class_set.update(has_node.sub_class_set)
+            node.has_class_set.update( self.has_recursion(has_node) )
+            
+
+        return node.has_class_set
 
 
 
